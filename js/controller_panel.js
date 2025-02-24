@@ -24,6 +24,8 @@ import { close_context_menu, open_context_menu } from "./context_menu.js";
 export class ControllerPanel extends HTMLDivElement {
     static instances = {}
     static count = 0
+    static removalObserver = null;
+    static pendingRedraw = false;
 
     _remove() {
         Debug.trivia(`Removing ControllerPanel ${this.index}`)
@@ -112,21 +114,27 @@ export class ControllerPanel extends HTMLDivElement {
         
         this.resize_observer = new ResizeObserver((x) => this.on_size_change()).observe(this)
 
-        if (this.index==0) {
+        if (!ControllerPanel.removalObserver) {
             const canvas_container = document.getElementsByClassName('graph-canvas-container')[0];
-            this.removalObserver = new MutationObserver((mutations) => {
-                if (!global_settings.hidden && !canvas_container.contains(this)) {
-                    console.log(`ControllerPanel ${this.index} removed externally`);
-                    this.removalObserver.disconnect();
-                    this.removalObserver = null;
+            ControllerPanel.removalObserver = new MutationObserver((mutations) => {
+                let needsRedraw = false;
+                Object.values(ControllerPanel.instances).forEach((instance) => {
+                    if (!canvas_container.contains(instance)) {
+                        needsRedraw = true;
+                    }
+                });
 
-                    setTimeout(function() {
+                if (needsRedraw && !ControllerPanel.pendingRedraw && !global_settings.hidden) {
+                    ControllerPanel.pendingRedraw = true;
+                    setTimeout(() => {
                         ControllerPanel.redraw();
+                        ControllerPanel.pendingRedraw = false;
+                        // console.log('ControllerPanel removed. Called redraw', ControllerPanel.instances);
                     }, 100);
                 }
             });
 
-            this.removalObserver.observe(canvas_container, {
+            ControllerPanel.removalObserver.observe(canvas_container, {
                 childList: true,
                 subtree: true
             });
