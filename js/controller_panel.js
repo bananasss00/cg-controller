@@ -113,8 +113,9 @@ export class ControllerPanel extends HTMLDivElement {
         this.resize_observer = new ResizeObserver((x) => this.on_size_change()).observe(this)
 
         if (this.index==0) {
+            const canvas_container = document.getElementsByClassName('graph-canvas-container')[0];
             this.removalObserver = new MutationObserver((mutations) => {
-                if (!global_settings.hidden && !document.body.contains(this)) {
+                if (!global_settings.hidden && !canvas_container.contains(this)) {
                     console.log(`ControllerPanel ${this.index} removed externally`);
                     this.removalObserver.disconnect();
                     this.removalObserver = null;
@@ -125,7 +126,7 @@ export class ControllerPanel extends HTMLDivElement {
                 }
             });
 
-            this.removalObserver.observe(document.body, {
+            this.removalObserver.observe(canvas_container, {
                 childList: true,
                 subtree: true
             });
