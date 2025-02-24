@@ -112,19 +112,24 @@ export class ControllerPanel extends HTMLDivElement {
         
         this.resize_observer = new ResizeObserver((x) => this.on_size_change()).observe(this)
 
-        this._isDestroyed = false;
-        this.removalObserver = new MutationObserver((mutations) => {
-            if (!global_settings.hidden && !document.body.contains(this) && !this._isDestroyed) {
-                console.log(`ControllerPanel ${this.index} removed externally`);
-                this._isDestroyed = true;
-                ControllerPanel.redraw();
-            }
-        });
+        if (this.index==0) {
+            this.removalObserver = new MutationObserver((mutations) => {
+                if (!global_settings.hidden && !document.body.contains(this)) {
+                    console.log(`ControllerPanel ${this.index} removed externally`);
+                    this.removalObserver.disconnect();
+                    this.removalObserver = null;
 
-        this.removalObserver.observe(document.body, {
-            childList: true,
-            subtree: true
-        });
+                    setTimeout(function() {
+                        ControllerPanel.redraw();
+                    }, 100);
+                }
+            });
+
+            this.removalObserver.observe(document.body, {
+                childList: true,
+                subtree: true
+            });
+        }
     }
 
     static on_group_details_change(oldname, changes) {
