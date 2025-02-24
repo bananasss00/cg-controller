@@ -111,6 +111,20 @@ export class ControllerPanel extends HTMLDivElement {
         this.clear_stacking_threshold()
         
         this.resize_observer = new ResizeObserver((x) => this.on_size_change()).observe(this)
+
+        this._isDestroyed = false;
+        this.removalObserver = new MutationObserver((mutations) => {
+            if (!global_settings.hidden && !document.body.contains(this) && !this._isDestroyed) {
+                console.log(`ControllerPanel ${this.index} removed externally`);
+                this._isDestroyed = true;
+                ControllerPanel.redraw();
+            }
+        });
+
+        this.removalObserver.observe(document.body, {
+            childList: true,
+            subtree: true
+        });
     }
 
     static on_group_details_change(oldname, changes) {
